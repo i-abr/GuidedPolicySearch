@@ -102,15 +102,20 @@ if __name__ == '__main__':
         state = env.reset()
         gps_planner.reset()
 
-        action = gps_planner(state) + npr.normal(0., 0.4, size=(action_dim,))
+        action = gps_planner.update(state)
+        # action = policy_net.get_action(state)
 
         episode_reward = 0
         done = False
         for step in range(max_steps):
             for _ in range(frame_skip):
                 next_state, reward, done, _ = env.step(action.copy())
-            eps = 1.0 * (0.999**frame_idx)
-            next_action = gps_planner(next_state) + npr.normal(0., eps, size=(action_dim,))
+
+            next_action = gps_planner.update(next_state)
+            # next_action = policy_net.get_action(next_state)
+            if frame_idx < 1000:
+                eps = 1.0 * (0.999**frame_idx)
+                next_action = next_action + npr.normal(0., eps, size=(action_dim,))
 
             model_replay_buffer.push(state, action, reward, next_state, next_action, done)
 
