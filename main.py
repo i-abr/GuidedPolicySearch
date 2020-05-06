@@ -113,8 +113,8 @@ if __name__ == '__main__':
 
             next_action = gps_planner.update(next_state)
             # next_action = policy_net.get_action(next_state)
-            if frame_idx < 1000:
-                eps = 1.0 * (0.999**frame_idx)
+            if frame_idx < 2000:
+                eps = 1.0 * (0.99**frame_idx)
                 next_action = next_action + npr.normal(0., eps, size=(action_dim,))
 
             model_replay_buffer.push(state, action, reward, next_state, next_action, done)
