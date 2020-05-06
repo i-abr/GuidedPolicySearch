@@ -12,8 +12,7 @@ sys.path.append('../')
 import envs
 
 import torch
-# from guided_policy_search import GuidedPolicySearch
-from mpc import MPC
+from guided_policy_search import GuidedPolicySearch
 from model import ModelOptimizer, Model, SARSAReplayBuffer
 from normalized_actions import NormalizedActions
 from policynetwork import PolicyNetwork
@@ -42,6 +41,17 @@ parser.set_defaults(render=False)
 
 args = parser.parse_args()
 
+
+def evaluate(env, policy, T):
+    s = env.reset()
+    rew = 0.
+    for t in range(T):
+        a = policy.get_action(s)
+        s, r, done, _ = env.step(a)
+        rew += r
+        if done:
+            break
+    return rew
 
 if __name__ == '__main__':
 
@@ -147,8 +157,8 @@ if __name__ == '__main__':
             if args.done_util:
                 if done:
                     break
-
-        print('ep rew', ep_num, episode_reward)
+        test_reward = evaluate(env, policy_net, args.max_steps)
+        print('ep rew', ep_num, episode_reward, test_reward)
         rewards.append([frame_idx, episode_reward])
         ep_num += 1
     print('saving final data set')

@@ -33,7 +33,7 @@ class GuidedPolicySearch(object):
 
         # policy cosntraint stuff
         self.lam = torch.zeros(T, self.action_dim).to(self.device)
-        self.rho = 1e-2
+        self.rho = 1.0
         self.policy_optim = optim.Adam(self.policy.parameters(), lr=policy_lr)
 
     def reset(self):
@@ -52,23 +52,23 @@ class GuidedPolicySearch(object):
                 s, r = self.model.step(s, u.unsqueeze(0))
                 self.lam[i] += self.rho * (torch.tanh(mu.squeeze()) - u)
 
-    def update(self, state):
+    def update(self, state, epochs=2):
         self.update_constraint(state)
-        s = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-
-        cost = 0.
-        for K, k, xbar in zip(self.K, self.k, self.xbar):
-            mu, _ = self.policy(s)
-            u = torch.mv(K, xbar - s.squeeze()) + k
-            s, r = self.model.step(s, u.unsqueeze(0))
-            cost = cost - r \
-                        + torch.dot(lam, torch.tanh(mu.squeeze())-ubar) \
-                        + (self.rho/2.0) * torch.pow(torch.tanh(mu.squeeze())-ubar,2).sum()
-        self.ilqr_optim.zero_grad()
-        self.policy_optim.zero_grad()
-        cost.backward()
-        self.ilqr_optim.step()
-        self.policy_optim.step()
+        for epoch in range(epochs):
+            s = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            cost = 0.
+            for K, k, xbar, lam in zip(self.K, self.k, self.xbar, self.lam.detach()):
+                mu, _ = self.policy(s)
+                u = torch.mv(K, xbar - s.squeeze()) + k
+                s, r = self.model.step(s, u.unsqueeze(0))
+                cost = cost - r \
+                            + torch.dot(lam, torch.tanh(mu.squeeze())-u) \
+                            + (self.rho/2.0) * torch.pow(torch.tanh(mu.squeeze())-u,2).sum()
+            self.ilqr_optim.zero_grad()
+            self.policy_optim.zero_grad()
+            cost.backward()
+            self.ilqr_optim.step()
+            self.policy_optim.step()
 
 
         with torch.no_grad():

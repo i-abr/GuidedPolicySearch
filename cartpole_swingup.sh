@@ -6,6 +6,7 @@ do
                 --env 'InvertedPendulumSwingupBulletEnv' \
                 --max_frames 10000 \
                 --frame_skip 4 \
+                --horizon 5 \
                 --max_steps 1000 \
                 --model_iter 5 \
                 --seed $seed \
