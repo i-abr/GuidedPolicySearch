@@ -29,7 +29,6 @@ class MPC(object):
     def reset(self):
         with torch.no_grad():
             self.u.zero_()
-            self.lam.zero_()
 
     def update_constraint(self, state):
         with torch.no_grad():
@@ -48,17 +47,15 @@ class MPC(object):
 
         cost = 0.
         rho_2 = self.rho/2.0
-        for K, u, lam in zip(self.K, self.u, self.lam.detach()):
-            mu, _ = self.policy(s)
-            ubar = torch.mv(K, s.squeeze()) + u
-            s, r = self.model.step(s, ubar.unsqueeze(0))
+        for u in self.u:
+            s, r = self.model.step(s, torch.tanh(u.unsqueeze(0)))
             cost = cost + r
 
         cost.backward()
         with torch.no_grad():
-            self.u -= self.lr * self.u.grad
+            self.u += self.lr * self.u.grad
             self.u.grad.zero_()
-            u = self.u[0].cpu().clone().numpy()
+            u = torch.tanh(self.u[0].cpu().clone()).numpy()
             self.u[:-1] = self.u[1:].clone()
             self.u[-1].zero_()
             return u

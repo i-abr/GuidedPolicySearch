@@ -12,7 +12,8 @@ sys.path.append('../')
 import envs
 
 import torch
-from guided_policy_search import GuidedPolicySearch
+# from guided_policy_search import GuidedPolicySearch
+from mpc import MPC
 from model import ModelOptimizer, Model, SARSAReplayBuffer
 from normalized_actions import NormalizedActions
 from policynetwork import PolicyNetwork
@@ -113,8 +114,8 @@ if __name__ == '__main__':
 
             next_action = gps_planner.update(next_state)
             # next_action = policy_net.get_action(next_state)
-            if frame_idx < 2000:
-                eps = 1.0 * (0.99**frame_idx)
+            if True:
+                eps = 1.0 * (0.995**frame_idx)
                 next_action = next_action + npr.normal(0., eps, size=(action_dim,))
 
             model_replay_buffer.push(state, action, reward, next_state, next_action, done)
